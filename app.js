@@ -12,26 +12,36 @@ const rtm = new RtmClient(token, {
   autoMark: true,
 });
 
-let state = null;
+let state = {
+  name: '',
+  phoneNumber: '',
+  address: '',
 
-const setState = (newState) => {
-  state = newState;
+};
+
+let event = null;
+
+const setState = (oldState, newState) => {
+  state = Object.assign({}, oldState, newState);
+}
+const setEvent = (next) => {
+  event = next;
 }
 
 const handlers = {};
 
 // basic router, can use botkit later on
 const router = (message) => {
-  if (!state) {
+  if (!event) {
     handlers.DEFAULT(message);
   } else {
-    handlers[state](message);
+    handlers[event](message);
   }
 }
 
 handlers.DEFAULT = (message) => {
   rtm.sendMessage("Welcome! What's your name", message.channel);
-  setState(states.GET_NAME);
+  setEvent('GET_NAME');
 }
 
 /*
@@ -44,20 +54,65 @@ handlers.DEFAULT = (message) => {
   7. if yes, say thanks, and loop back to the beginning, otherwise loop back with error
 */
 
+handlers.GET_NAME = (message) => {
+  setState(state, {name: message.text});
+
+  rtm.sendMessage(`Nice to meet you ${state.name}`, message.channel);
+  rtm.sendMessage(`What is your phone number?`, message.channel);
+  setEvent('GET_NUMBER')
+}
+
+handlers.GET_NUMBER = (message) => {
+  setState(state, {phoneNumber: message.text});
+
+  rtm.sendMessage(`Thanks for your phone number! ${state.phoneNumber}`, message.channel);
+  rtm.sendMessage(`What is your address?`, message.channel);
+  setEvent('GET_ADDRESS')
+}
+
+handlers.GET_ADDRESS = (message) => {
+  setState(state, {address: message.text});
+
+  rtm.sendMessage(`Got it! ${state.address}`, message.channel);
+  rtm.sendMessage(`Is all this information correct? ${state.address}`, message.channel);
+  rtm.sendMessage(
+    `name: ${state.name}
+    phone-number: ${state.phoneNumber}
+    address: ${state.address}`, message.channel);
+  setEvent('CONFIRM')
+}
+
+handlers.CONFIRM = (message) => {
+  const isConfirmed = message.text.toLowerCase();
+  console.log('isConfirmed', isConfirmed);
+  if (isConfirmed.indexOf('yes') > -1) {
+    rtm.sendMessage('Great glad it was all correct!', message.channel);
+  } else {
+    rtm.sendMessage('oh noes! lets start over', message.channel);
+  }
+  setEvent(null);
+}
+
+/*
+  1. Validate the phone number
+  2. Either confirm and pass them to the next step
+  3. Or ask them for it again with an error message
+*/
+
+
+
 // Listens to all `message` events from the team
 rtm.on(RTM_EVENTS.MESSAGE, (message) => {
-  // console.log('message', message)
-  if (message.text.indexOf('time') > -1) {
-    rtm.sendMessage('The time is ' + new Date().toLocaleTimeString(), message.channel)
-  }
   if (message.channel === "G79CLHEA3") {
     console.log('Bot sees a message in general and chooses not to respond')
   } else {
+    if (message.text.indexOf('time') > -1) {
+      rtm.sendMessage('The time is ' + new Date().toLocaleTimeString(), message.channel)
+    }
     // rtm.sendMessage('Beep boop hello world!', message.channel)
     // rtm.sendMessage(`Hi there @${message.user}`, message.channel)
     router(message);
   }
 })
 
-// setState("DEFAULT");
 rtm.start();
