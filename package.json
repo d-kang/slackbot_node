@@ -1,0 +1,15 @@
+{
+  "name": "chatbots_with_node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": ". ./.token && nodemon app.js"
+  },
+  "author": "David Kang",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/client": "^3.14.0"
+  }
+}
