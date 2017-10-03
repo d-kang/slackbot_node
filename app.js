@@ -14,11 +14,14 @@ const rtm = new RtmClient(token, {
 
 // Listens to all `message` events from the team
 rtm.on(RTM_EVENTS.MESSAGE, (message) => {
+  console.log('message', message)
+  if (message.text.indexOf('time') > -1) {
+    rtm.sendMessage('The time is ' + new Date().toLocaleTimeString(), message.channel)
+  }
   if (message.channel === "G79CLHEA3") {
-    console.log('Bot sees a message in general and chooses no to respond')
+    console.log('Bot sees a message in general and chooses not to respond')
   } else {
     rtm.sendMessage('Beep boop hello world!', message.channel)
-    console.log('message', message)
     rtm.sendMessage(`Hi there @${message.user}`, message.channel)
   }
 })
